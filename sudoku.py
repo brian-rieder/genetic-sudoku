@@ -2,8 +2,8 @@
 
 from copy import deepcopy
 import matplotlib.pyplot as plt
+import numpy as np
 from random import randint, sample, seed
-from statistics import mean
 
 
 ############################################### GENETIC ALGORITHM ###############################################
@@ -15,6 +15,26 @@ def how_many_missing(num_array):
         if num_to_check in num_array:
             flags[num_to_check-1] = 0
     return sum(flags)
+
+
+def check_square(board, row, col):
+    base = int(len(board) ** 0.5)
+    # check errors in the row
+    row_errors = how_many_missing(board[row])
+    # check errors in the column
+    xboard = np.array(board)
+    column_errors = how_many_missing(xboard[:, col])
+    # check errors in the box
+    box_list = []
+    mul_row = row // base
+    mul_col = col // base
+    for i in range(0, base):
+        for j in range(0, base):
+            row_idx = (col + j) % base + base * mul_col
+            col_idx = (row + i) % base + base * mul_row
+            box_list.append(board[row_idx][col_idx])
+    box_errors = how_many_missing(box_list)
+    return (row_errors + column_errors + box_errors) == 0
 
 
 def fitness_function(board):
@@ -87,21 +107,14 @@ def mutation_operator(board_list, removal_map):
     worst_board = board_list[fitness_list.index(initial_fitness)]
     board_size = len(worst_board)
     row = randint(0, board_size-1)
-    if sum(removal_map[row]) == 0:
-        for i in range(board_size):
-            if sum(removal_map[i]) != 0:
-                row = i
-                break
     col = removal_map[row].index(min(x for x in removal_map[row] if x > 0))
     worst_board[row][col] = (worst_board[row][col] + 1) % board_size
     if worst_board[row][col] == 0:
         worst_board[row][col] = board_size
     removal_map[row][col] += 1
     # evaluate fitness and mark "done" if it's correct
-    final_fitness = fitness_function(worst_board)
     # if the row, col, and box are all correct now, we're done with this square
-    if (final_fitness + 3) == initial_fitness:
-        removal_map[row][col] = 0
+    if check_square(worst_board, row, col):
         for board in board_list:
             board[row][col] = worst_board[row][col]
     return board_list, removal_map
@@ -191,7 +204,8 @@ def pretty_print(board):
 
 
 if __name__ == "__main__":
-    n = 3  # n is meant to be the dimension of the interior boxes, i.e. the board is n^2 * n^2
+    seed(123)
+    n = 3 # n is meant to be the dimension of the interior boxes, i.e. the board is n^2 * n^2
     population_size = 10
     # generate the sudoku board
     solved_board = generate_sudoku(n)
