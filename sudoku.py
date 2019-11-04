@@ -121,6 +121,13 @@ def mutation_operator(board_list, removal_map):
 
 
 def crossover_operator(board_list, removal_map):
+    """
+    Performs crossover by pairing the worst board to the best board and working inwards. Crossover is done through the
+    selection of a random row and the most mutated position and copying it from the better board to the worse board.
+    :param board_list: the list of boards under analysis
+    :param removal_map: the mapping which indicates which indices need to be updated
+    :return: updated list of crossed-over boards
+    """
     board_size = len(board_list[0])
     # determine the fitness of each board
     fitness_values = [fitness_function(board) for board in board_list]
